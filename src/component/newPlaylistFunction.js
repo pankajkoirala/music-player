@@ -1,4 +1,7 @@
 import React, { Component, useEffect, useState } from 'react';
+import { AntDesign, Entypo, Feather } from "react-native-vector-icons"
+import FontAwesome5Icon from "react-native-vector-icons/FontAwesome5";
+import ProgressCircle from 'react-native-progress-circle'
 import {
   Dimensions,
   Image,
@@ -6,60 +9,46 @@ import {
   Text,
   TouchableHighlight,
   View,
+  TouchableOpacity, ScrollView
 } from 'react-native';
 // import Slider from 'react-native-slider';
 import Slider from '@react-native-community/slider';
 
 import { Asset, Audio, Font } from 'expo-av';
 import { MaterialIcons } from '@expo/vector-icons';
-import moron5 from './../../assets/Maroon5.mp3'
-import believer from './../../assets/believer.mp3'
-
+import { audioBookPlaylist } from './musicListArray'
 
 
 const { width: DEVICE_WIDTH, height: DEVICE_HEIGHT } = Dimensions.get('window');
 const BACKGROUND_COLOR = '#FFFFFF';
-const DISABLED_OPACITY = 0.5;
-const FONT_SIZE = 14;
 const LOADING_STRING = 'Loading...';
 const BUFFERING_STRING = 'Buffering...';
 const RATE_SCALE = 3.0;
 
-export default ClassMusic = () => {
+export default ClassMusic = (props) => {
   const [index, setIndex] = useState(0)
   const [isSeeking, setIsSeeking] = useState(false)
   const [shouldPlayAtEndOfSeek, setShouldPlayAtEndOfSeek] = useState(false)
   const [playbackInstance, setPlaybackInstance] = useState(null)
-  const [playbackInstanceName, setPlaybackInstanceName] = useState(LOADING_STRING)
   const [playbackInstancePosition, setPlaybackInstancePosition] = useState(null)
   const [playbackInstanceDuration, setPlaybackInstanceDuration] = useState(null)
   const [shouldPlay, setShouldPlay] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isBuffering, setIsBuffering] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  // const[fontLoaded,setFontLoaded]=useState()
+  const [isMute, setIsMute] = useState(false)
   const [volume, setVolume] = useState(1.0)
   const [rate, setRate] = useState(1.0)
-  const [portrait, setPortrait] = useState(null)
+  const [isShuffle, setIsShuffle] = useState(false)
+  const [isRepate, setIsRepete] = useState(false)
+  const [playAgain, setPlayAgain] = useState(false)
 
-  const audioBookPlaylist = [
-    {
-      title: 'believer',
-      author: 'believer-believer',
-      source: 'believer',
-      uri:
-        believer,
-      imageSource: 'https://i.ytimg.com/vi/jki2p78ppjQ/maxresdefault.jpg'
-    },
-    {
-      title: 'moron5',
-      author: 'adam ',
-      source: 'moroon5',
-      uri:
-        moron5,
-      imageSource: 'https://m.media-amazon.com/images/M/MV5BNmNmNGExNDctM2Q3MC00MTU5LTkyYzMtMzMyYmI2MTA3MjU3XkEyXkFqcGdeQXVyNjE0ODc0MDc@._V1_.jpg'
+  useEffect(() => {
+    if (props?.route?.params?.musicIndex) {
+      setIndex(props.route.params.musicIndex)
+      setShouldPlay(true)
     }
-  ]
+  }, [props?.route?.params?.musicIndex])
+
   useEffect(() => {
     async function apple(params) {
 
@@ -72,58 +61,45 @@ export default ClassMusic = () => {
           shouldDuckAndroid: true,
           staysActiveInBackground: true,
           playThroughEarpieceAndroid: true
+
         })
 
-        loadAudio()
+        _loadNewPlaybackInstance(shouldPlay)
       } catch (e) {
         console.log(e)
       }
     }
     apple()
 
-  }, [index])
-  const loadAudio = async () => {
-
-    try {
-      const playbackInstance = new Audio.Sound()
-      const source =
-        audioBookPlaylist[index].uri
+  }, [index, playAgain, isRepate, isShuffle,])
 
 
-      const status = {
-        shouldPlay: isPlaying,
-        volume: volume
-      }
-
-      playbackInstance.setOnPlaybackStatusUpdate((arg) => _onPlaybackStatusUpdate(arg))
-      await playbackInstance.loadAsync(source, status, false)
-
-      setPlaybackInstance(playbackInstance)
-    } catch (e) {
-      console.log(e)
+  const _loadNewPlaybackInstance = async (playing) => {
+    if (playbackInstance != null) {
+      await playbackInstance.unloadAsync();
+      playbackInstance.setOnPlaybackStatusUpdate(null);
+      setPlaybackInstance(null)
+      // playbackInstance = null;
     }
+
+    const source = audioBookPlaylist[index].uri
+
+    const initialStatus = {
+      shouldPlay: playing,
+      rate: rate,
+      volume: volume,
+    };
+
+    const { sound, status } = await Audio.Sound.createAsync(
+      source,
+      initialStatus,
+      (arg) => _onPlaybackStatusUpdate(arg)
+    );
+    setPlaybackInstance(sound)
   }
 
-
-
-  const _updateScreenForLoading = (isLoading) => {
-    if (isLoading) {
-
-      setIsPlaying(false)
-      setPlaybackInstanceName(LOADING_STRING)
-      setPlaybackInstanceDuration(null)
-      setPlaybackInstancePosition(null)
-      setIsLoading(true)
-    } else {
-
-      setPlaybackInstanceName(PLAYLIST[index].name)
-      setPortrait(PLAYLIST[index].image)
-      setIsLoading(false)
-    }
-  }
 
   const _onPlaybackStatusUpdate = status => {
-
     if (status.isLoaded) {
 
       setPlaybackInstancePosition(status.positionMillis)
@@ -132,10 +108,14 @@ export default ClassMusic = () => {
       setIsPlaying(status.isPlaying)
       setIsBuffering(status.isBuffering)
       setRate(status.rate)
-      setVolume(status.volume)
       if (status.didJustFinish) {
-        _updatePlaybackInstanceForIndex(true);
-
+        if (isRepate === true) {
+          setShouldPlay(true)
+          setPlayAgain(!playAgain)
+        } else {
+          setShouldPlay(true)
+          _advanceIndex(true);
+        }
       }
     } else {
       if (status.error) {
@@ -146,11 +126,29 @@ export default ClassMusic = () => {
 
 
 
-  const _updatePlaybackInstanceForIndex = async (playing) => {
-    _updateScreenForLoading(true);
 
-    _loadNewPlaybackInstance(playing);
+
+
+
+  const _advanceIndex = (forward) => {
+    if (isShuffle) {
+
+      setIndex((Math.floor(Math.random() * (audioBookPlaylist.length - 0 + 1)))) %
+        audioBookPlaylist.length;
+    } else {
+      if (forward) {
+        if (index === audioBookPlaylist.length - 1) {
+          setIndex(0)
+        } else {
+          setIndex(index + 1)
+        }
+
+      }
+    }
   }
+  //---------------------------------------------------------------------------------
+
+
 
   const _onPlayPausePressed = () => {
     if (playbackInstance != null) {
@@ -171,12 +169,19 @@ export default ClassMusic = () => {
   const _onForwardPressed = () => {
     if (playbackInstance) {
       playbackInstance.unloadAsync()
-      if (index === audioBookPlaylist.length - 1) {
-        setIndex(0)
+      if (isShuffle) {
+        setIndex((Math.floor(Math.random() * (audioBookPlaylist.length - 0 + 1)))) %
+          audioBookPlaylist.length;
       } else {
-        setIndex(index + 1)
+
+        if (index === audioBookPlaylist.length - 1) {
+          setIndex(0)
+        } else {
+          setIndex(index + 1)
+        }
       }
     }
+
 
   };
 
@@ -184,10 +189,16 @@ export default ClassMusic = () => {
 
     if (playbackInstance) {
       playbackInstance.unloadAsync()
-      if (index === 0) {
-        setIndex(audioBookPlaylist.length - 1)
+      if (isShuffle) {
+        setIndex((Math.floor(Math.random() * (audioBookPlaylist.length - 0 + 1)))) %
+          audioBookPlaylist.length;
       } else {
-        setIndex(currentIndex - 1)
+
+        if (index === 0) {
+          setIndex(audioBookPlaylist.length - 1)
+        } else {
+          setIndex(index - 1)
+        }
       }
     }
 
@@ -199,12 +210,12 @@ export default ClassMusic = () => {
     }
   };
 
+
   const _trySetRate = async rate => {
     if (playbackInstance != null) {
       try {
         await playbackInstance.setRateAsync(rate);
       } catch (error) {
-        // Rate changing could not be performed, possibly because the client's Android API is too old.
       }
     }
   };
@@ -215,8 +226,7 @@ export default ClassMusic = () => {
 
   const _onSeekSliderValueChange = value => {
     if (playbackInstance != null && !isSeeking) {
-      // this.isSeeking = true;
-      // this.shouldPlayAtEndOfSeek = this.state.shouldPlay;
+
       setIsSeeking(true)
       setShouldPlayAtEndOfSeek(shouldPlay)
       playbackInstance.pauseAsync();
@@ -225,7 +235,6 @@ export default ClassMusic = () => {
 
   const _onSeekSliderSlidingComplete = async value => {
     if (playbackInstance != null) {
-      // this.isSeeking = false;
       setIsSeeking(false)
       const seekPosition = value * playbackInstanceDuration;
       if (shouldPlayAtEndOfSeek) {
@@ -271,359 +280,280 @@ export default ClassMusic = () => {
       playbackInstancePosition != null &&
       playbackInstanceDuration != null
     ) {
-      return `${_getMMSSFromMillis(
-        playbackInstancePosition
-      )} / ${_getMMSSFromMillis(
-        playbackInstanceDuration
-      )}`;
+      return {
+        musicPlayingTime: _getMMSSFromMillis(
+          playbackInstancePosition
+        ), totalMusicTime: _getMMSSFromMillis(
+          playbackInstanceDuration
+        ),
+        totalDuration: playbackInstanceDuration,
+        runningPosition: playbackInstancePosition
+      };
     }
     return '';
   }
 
+  const shuffleOnOff = () => {
+    if (isShuffle) {
+      setIsShuffle(false)
+    } else {
+      setIsShuffle(true)
+
+    }
+  }
+  const repateOnOff = () => {
+    if (isRepate) {
+      setIsRepete(false)
+    } else {
+      setIsRepete(true)
+
+    }
+  }
   return (
-    <View style={styles.container}>
-      <View style={styles.portraitContainer}>
-        <Image
-          style={styles.portrait}
-          source={{
-            uri: portrait,
-          }}
-        />
-      </View>
-      <View style={styles.detailsContainer}>
-        <Text style={[styles.text]}>
-          {playbackInstanceName}
-        </Text>
-        <Text style={[styles.text,]}>
-          {isBuffering ? (
-            BUFFERING_STRING
-          ) : (
-            _getTimestamp()
-          )}
-        </Text>
-      </View>
-      <View
-        style={[
-          styles.buttonsContainerBase,
-          styles.buttonsContainerTopRow,
-          {
-            opacity: false
-              ? DISABLED_OPACITY
-              : 1.0,
-          },
-        ]}
-      >
-        <TouchableHighlight
-          underlayColor={BACKGROUND_COLOR}
-          style={styles.wrapper}
-          onPress={() => _onBackPressed()}
-          disabled={false}
-        >
-          <View>
-            <MaterialIcons
-              name="fast-rewind"
-              size={40}
-              color="#56D5FA"
-            />
-          </View>
-        </TouchableHighlight>
-        <TouchableHighlight
-          underlayColor={BACKGROUND_COLOR}
-          style={styles.wrapper}
-          onPress={() => _onPlayPausePressed()}
-          disabled={false}
-        >
-          <View>
-            {isPlaying ? (
-              <MaterialIcons
-                name="pause"
-                size={40}
-                color="#56D5FA"
-              />
+    <ScrollView bounces={false} >
+      <View style={styles.contanier}>
+        <View style={styles.mainbar}>
+          <AntDesign name="left" size={24} style={{ marginLeft: "5%" }} />
+          <Text style={styles.now_playing_text}> Now Playing </Text>
+          <Entypo name="dots-three-horizontal" size={24} style={{ marginLeft: "20%" }} />
+        </View>
+
+        <View style={styles.music_logo_view}>
+          <Image source={{ uri: audioBookPlaylist[index].imageSource }} style={styles.image_view} />
+        </View>
+
+        <View style={styles.name_of_song_View} >
+          <Text style={styles.name_of_song_Text1}>{audioBookPlaylist[index].title}</Text>
+          <Text style={styles.name_of_song_Text2}>{audioBookPlaylist[index].author} - {audioBookPlaylist[index].source}</Text>
+          <Text style={[styles.text,]}>
+            {isBuffering ? (
+              BUFFERING_STRING
             ) : (
-              <MaterialIcons
-                name="play-arrow"
-                size={40}
-                color="#56D5FA"
-              />
+              LOADING_STRING
             )}
-          </View>
-        </TouchableHighlight>
-        <TouchableHighlight
-          underlayColor={BACKGROUND_COLOR}
-          style={styles.wrapper}
-          onPress={() => _onStopPressed()}
-          disabled={false}
-        >
-          <View>
-            <MaterialIcons
-              name="stop"
-              size={40}
-              color="#56D5FA"
-            />
-          </View>
-        </TouchableHighlight>
-        <TouchableHighlight
-          underlayColor={BACKGROUND_COLOR}
-          style={styles.wrapper}
-          onPress={() => _onForwardPressed()}
-          disabled={false}
-        >
-          <View>
-            <MaterialIcons
-              name="fast-forward"
-              size={40}
-              color="#56D5FA"
-            />
-          </View>
-        </TouchableHighlight>
-      </View>
-      <View
-        style={[
-          styles.playbackContainer,
-          {
-            opacity: false
-              ? DISABLED_OPACITY
-              : 1.0,
-          },
-        ]}
-      >
-        {/* <Slider
-          style={styles.playbackSlider}
-          value={_getSeekSliderPosition()}
-          onValueChange={(e) => _onSeekSliderValueChange(e)}
-          onSlidingComplete={(e) => _onSeekSliderSlidingComplete(e)}
-          thumbTintColor="#000000"
-          minimumTrackTintColor="#4CCFF9"
-          disabled={false}
-        /> */}
-        <Slider
-          style={styles.playbackSlider}
-          onSlidingComplete={(e) => _onSeekSliderSlidingComplete(e)}
-          onValueChange={(e) => _onSeekSliderValueChange(e)}
-          minimumTrackTintColor="#e75480"
-          maximumTrackTintColor="#d3d3d3"
-          thumbTintColor="#e75480"
-          value={_getSeekSliderPosition()}
-        />
-      </View>
-      <View
-        style={[
-          styles.buttonsContainerBase,
-          styles.buttonsContainerMiddleRow,
-        ]}
-      >
-        <View style={styles.volumeContainer}>
-          <View>
-            <MaterialIcons
-              name="volume-down"
-              size={40}
-              color="#56D5FA"
-            />
-          </View>
+          </Text>
+        </View>
+
+        <View style={styles.slider_view}>
+          <Text style={styles.slider_time}> {_getTimestamp().musicPlayingTime || '00:00'}</Text>
           <Slider
-            style={styles.volumeSlider}
-            value={1}
-            onValueChange={(e) => _onVolumeSliderValueChange(e)}
+            style={styles.slider_style}
+            onSlidingComplete={(e) => _onSeekSliderSlidingComplete(e)}
+            onValueChange={(e) => _onSeekSliderValueChange(e)}
+            minimumTrackTintColor="#e75480"
+            maximumTrackTintColor="#d3d3d3"
+            thumbTintColor="#e75480"
+            value={_getSeekSliderPosition()}
+          />
+          <Text style={styles.slider_time}>{_getTimestamp().totalMusicTime || '00:00'}</Text>
+        </View>
+        <View style={{ display: 'flex', justifyContent: 'space-around', flexDirection: 'row' }}>
+          <TouchableHighlight
+            style={styles.wrapper}
+            onPress={() => _onStopPressed()}
+            disabled={false}
+          >
+            <View>
+              <FontAwesome5Icon
+                name="stop-circle"
+                size={40}
+                color="#e75480"
+              />
+            </View>
+          </TouchableHighlight>
+          <TouchableOpacity onPress={(e) => { (isMute ? _onVolumeSliderValueChange(volume) : _onVolumeSliderValueChange(0)), setIsMute(!isMute) }}>
+            {isMute ?
+              <FontAwesome5Icon name='volume-mute' size={30} color='grey' /> :
+              <FontAwesome5Icon name='volume-up' size={30} color='#e75480' />
+            }
+          </TouchableOpacity>
+        </View>
+        <View style={styles.functions_view}>
+          <TouchableOpacity style={{ marginLeft: "9%", opacity: 1 }} onPress={() =>
+            shuffleOnOff()
+          }>
+            {isShuffle ? <Entypo name="shuffle" size={24} color="#e75480" /> :
+              <Entypo name="shuffle" size={24} color="grey" />}
+
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => _onBackPressed()} style={{ marginLeft: "12%" }}>
+            <FontAwesome5Icon name="backward" size={24} color="#e75480" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => _onPlayPausePressed()} style={{ marginLeft: "12%" }}>
+            {isPlaying ? (
+              <FontAwesome5Icon name="pause" size={30} color="#e75480" />
+            ) : (
+              <FontAwesome5Icon name="play" size={30} color="#e75480" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => _onForwardPressed()} style={{ marginLeft: "12%" }}>
+            <FontAwesome5Icon name="forward" size={24} color="#e75480" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => repateOnOff()} style={{ marginLeft: "10%", opacity: 1 }}>
+            {isRepate ? <Feather name="repeat" size={20} color="#e75480" /> :
+              <Feather name="repeat" size={20} color="grey" />}
+          </TouchableOpacity>
+        </View>
+        <View style={styles.slider_view_volume}>
+          <FontAwesome5Icon name='volume-off' size={35} style={styles.slider_time} />
+          <Slider
+            style={styles.slider_style}
+            minimumValue={0}
+            maximumValue={1}
+
+            onValueChange={(e) => { _onVolumeSliderValueChange(e), setVolume(e.toFixed(2)) }}
+            minimumTrackTintColor="#e75480"
+            maximumTrackTintColor="#d3d3d3"
+            thumbTintColor="#e75480"
+
+            value={volume}
+          />
+          <FontAwesome5Icon name='volume-up' size={25} style={styles.slider_time} />
+        </View>
+        <View style={styles.slider_view_volume}>
+          <FontAwesome5Icon name='fast-backward' size={25} style={styles.slider_time} />
+          <Slider
+            style={styles.slider_style}
+            value={rate / RATE_SCALE}
+            onSlidingComplete={(e) => _onRateSliderSlidingComplete(e)}
             thumbTintColor="#000000"
             minimumTrackTintColor="#4CCFF9"
           />
-          <View>
-            <MaterialIcons
-              name="volume-up"
-              size={40}
-              color="#56D5FA"
-            />
+          <FontAwesome5Icon name='fast-forward' size={25} style={styles.slider_time} />
+        </View>
+
+        <View style={styles.recently_played_view}>
+          <Text style={styles.recently_played_text}> Recently Played </Text>
+          <View style={styles.recently_played_list}>
+            <Image source={require("./../../assets/logo.jpg")} style={styles.recently_played_image} />
+            <View style={styles.recently_played_list_text}>
+              <Text style={styles.recently_played_list_text1}> #01 - Start With SEO </Text>
+              <Text style={styles.recently_played_list_text2}> By Setup Cast - 15: 35 </Text>
+            </View>
+            <View>
+              <ProgressCircle
+                percent={(_getTimestamp().runningPosition / _getTimestamp().totalDuration) * 100}
+                radius={25}
+                borderWidth={5}
+                color="#e75480"
+                shadowColor="#FFF"
+                bgColor="#fff">
+                <AntDesign name="play" size={25} color="#e75480" style={{ marginTop: "4%" }} />
+              </ProgressCircle>
+            </View>
           </View>
         </View>
       </View>
-      <View
-        style={[
-          styles.buttonsContainerBase,
-          styles.buttonsContainerBottomRow,
-        ]}
-      >
-        <View>
-          <MaterialIcons
-            name="call-received"
-            size={40}
-            color="#56D5FA"
-          />
-        </View>
-        <Slider
-          style={styles.rateSlider}
-          value={rate / RATE_SCALE}
-          onSlidingComplete={(e) => _onRateSliderSlidingComplete(e)}
-          thumbTintColor="#000000"
-          minimumTrackTintColor="#4CCFF9"
-        />
-        <View>
-          <MaterialIcons
-            name="call-made"
-            size={40}
-            color="#56D5FA"
-          />
-        </View>
-      </View>
-    </View>
-    //   <SafeAreaView style={styles.contanier}>
-    //   <View style={styles.mainbar}>
-    //     <AntDesign name="left" size={24} style={{ marginLeft: "5%" }} />
-    //     <Text style={styles.now_playing_text}> Now Playing </Text>
-    //     <Entypo name="dots-three-horizontal" size={24} style={{ marginLeft: "20%" }} />
-    //   </View>
-
-    //   <View style={styles.music_logo_view}>
-    //     <Image source={{ uri: audioBookPlaylist[currentIndex].imageSource }} style={styles.image_view} />
-    //   </View>
-
-    //   <View style={styles.name_of_song_View} >
-    //     <Text style={styles.name_of_song_Text1}>{audioBookPlaylist[currentIndex].title}</Text>
-    //     <Text style={styles.name_of_song_Text2}>{audioBookPlaylist[currentIndex].author} - {audioBookPlaylist[currentIndex].source}</Text>
-    //   </View>
-
-    //   <View style={styles.slider_view}>
-    //     <Text style={styles.slider_time}> 4:10 </Text>
-
-    //        <Slider
-    //      style={styles.slider_style}
-    //         onSlidingComplete={(e) => _onSeekSliderSlidingComplete(e)}
-    //         onValueChange={(e) => _onSeekSliderValueChange(e)}
-    //         minimumTrackTintColor="#e75480"
-    //         maximumTrackTintColor="#d3d3d3"
-    //         thumbTintColor="#e75480"
-    //         value={_getSeekSliderPosition()}
-    //       />
-    //     <Text style={styles.slider_time}>12:02</Text>
-    //   </View>
-
-    //   <View style={styles.functions_view}>
-    //     <Entypo name="shuffle" size={24} color="#e75480" style={{ marginLeft: "9%" }} />
-    //     <TouchableOpacity onPress={() => handlePreviousTrack()} style={{ marginLeft: "12%" }}>
-    //       <FontAwesome5Icon name="backward" size={24} color="#e75480" />
-    //     </TouchableOpacity>
-    //     <TouchableOpacity onPress={() => handlePlayPause()} style={{ marginLeft: "12%" }}>
-    //       {isPlaying ? (
-    //         <FontAwesome5Icon name="pause" size={30} color="#e75480" />
-    //       ) : (
-    //         <FontAwesome5Icon name="play" size={30} color="#e75480" />
-    //       )}
-    //     </TouchableOpacity>
-    //     <TouchableOpacity onPress={() => handleNextTrack()} style={{ marginLeft: "12%" }}>
-    //       <FontAwesome5Icon name="forward" size={24} color="#e75480" />
-    //     </TouchableOpacity>
-    //     <Feather name="repeat" size={20} color="#e75480" style={{ marginLeft: "10%" }} />
-    //   </View>
-    //   <Text>Volume</Text>
-    //   <View style={styles.slider_view_volume}>
-    //     <FontAwesome5Icon name='volume-off' size={35} style={styles.slider_time} />
-    //     <Slider
-    //       style={styles.slider_style}
-    //       minimumValue={0}
-    //       maximumValue={1}
-    //       onValueChange={(e) => playbackInstance.setVolumeAsync(e.toFixed(2))}
-    //       minimumTrackTintColor="#e75480"
-    //       maximumTrackTintColor="#d3d3d3"
-    //       thumbTintColor="#e75480"
-    //       value={volume}
-    //     />
-    //     <FontAwesome5Icon name='volume-up' size={35} style={styles.slider_time} />
-    //   </View>
-
-
-    //   <View style={styles.recently_played_view}>
-    //     <Text style={styles.recently_played_text}> Recently Played </Text>
-    //     <View style={styles.recently_played_list}>
-    //       <Image source={require("./../../assets/logo.jpg")} style={styles.recently_played_image} />
-    //       <View style={styles.recently_played_list_text}>
-    //         <Text style={styles.recently_played_list_text1}> #01 - Start With SEO </Text>
-    //         <Text style={styles.recently_played_list_text2}> By Setup Cast - 15: 35 </Text>
-    //       </View>
-    //       <View>
-    //         <ProgressCircle
-    //           percent={40}
-    //           radius={25}
-    //           borderWidth={5}
-    //           color="#e75480"
-    //           shadowColor="#FFF"
-    //           bgColor="#fff">
-    //           <AntDesign name="play" size={37} color="#e75480" style={{ marginTop: "4%" }} />
-    //         </ProgressCircle>
-    //       </View>
-    //     </View>
-    //   </View>
-    // </SafeAreaView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    backgroundColor: BACKGROUND_COLOR,
+
+  contanier: {
+    // height: DEVICE_HEIGHT,
+    width: DEVICE_WIDTH
   },
-  portraitContainer: {
-    marginTop: 80,
+  mainbar: {
+    height: "10%",
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
   },
-  portrait: {
-    height: 200,
-    width: 200,
+  now_playing_text: {
+    fontSize: 19,
+    marginLeft: "24%"
   },
-  detailsContainer: {
-    height: 40,
-    marginTop: 40,
-    alignItems: 'center',
+  music_logo_view: {
+    height: "30%",
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  playbackContainer: {
-    flex: 1,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    alignSelf: 'stretch',
+  image_view: {
+    height: "100%",
+    width: "50%",
+    borderRadius: 10
   },
-  playbackSlider: {
-    alignSelf: 'stretch',
-    marginLeft: 10,
-    marginRight: 10,
+  name_of_song_View: {
+    height: "15%",
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center"
   },
-  text: {
-    fontSize: FONT_SIZE,
-    minHeight: FONT_SIZE,
+  name_of_song_Text1: {
+    fontSize: 19,
+    fontWeight: "500"
   },
-  buttonsContainerBase: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  name_of_song_Text2: {
+    color: "#808080",
+    marginTop: "4%"
   },
-  buttonsContainerTopRow: {
-    maxHeight: 40,
-    minWidth: DEVICE_WIDTH / 2.0,
-    maxWidth: DEVICE_WIDTH / 2.0,
+  slider_view: {
+    height: "10%",
+    width: "100%",
+    alignItems: "center",
+    flexDirection: "row"
   },
-  buttonsContainerMiddleRow: {
-    maxHeight: 40,
-    alignSelf: 'stretch',
-    paddingRight: 20,
+  slider_view_volume: {
+    height: "10%",
+    width: "100%",
+    alignItems: "center",
+    flexDirection: "row"
   },
-  volumeContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minWidth: DEVICE_WIDTH - 40,
-    maxWidth: DEVICE_WIDTH - 40,
+  slider_style: {
+    height: "70%",
+    width: "60%"
   },
-  volumeSlider: {
-    width: DEVICE_WIDTH - 80,
+  slider_time: {
+    // fontSize: 15,
+    marginLeft: "6%",
+    color: "#808080"
   },
-  buttonsContainerBottomRow: {
-    alignSelf: 'stretch',
+  functions_view: {
+    flexDirection: "row",
+    height: "10%",
+    width: "100%",
+    alignItems: "center"
   },
-  rateSlider: {
-    width: DEVICE_WIDTH - 80,
+  recently_played_view: {
+    height: "25%",
+    width: "100%",
   },
+  recently_played_text: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: "#808080",
+    marginLeft: "5%",
+    marginTop: "6%"
+  },
+  recently_played_list: {
+    backgroundColor: "#FFE3E3",
+    height: "50%",
+    width: "90%",
+    borderRadius: 10,
+    marginLeft: "5%",
+    marginTop: "5%",
+    alignItems: "center",
+    flexDirection: "row"
+  },
+  recently_played_image: {
+    height: "80%",
+    width: "20%",
+    borderRadius: 10
+  },
+  recently_played_list_text: {
+    height: "100%",
+    width: "60%",
+    justifyContent: "center"
+  },
+  recently_played_list_text1: {
+    fontSize: 15,
+    marginLeft: "8%"
+  },
+  recently_played_list_text2: {
+    fontSize: 16,
+    color: "#808080",
+    marginLeft: "8%"
+  }
 });
