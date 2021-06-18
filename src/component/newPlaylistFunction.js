@@ -14,7 +14,7 @@ import {
 // import Slider from 'react-native-slider';
 import Slider from '@react-native-community/slider';
 
-import { Asset, Audio, Font } from 'expo-av';
+import { Audio } from 'expo-av';
 import { MaterialIcons } from '@expo/vector-icons';
 import { audioBookPlaylist } from './musicListArray'
 
@@ -35,12 +35,12 @@ export default ClassMusic = (props) => {
   const [shouldPlay, setShouldPlay] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isBuffering, setIsBuffering] = useState(false)
-  const [isMute, setIsMute] = useState(false)
   const [volume, setVolume] = useState(1.0)
   const [rate, setRate] = useState(1.0)
   const [isShuffle, setIsShuffle] = useState(false)
   const [isRepate, setIsRepete] = useState(false)
   const [playAgain, setPlayAgain] = useState(false)
+  //const [isMute, setIsMute] = useState(false) // dont remove it function is comment below
 
   useEffect(() => {
     if (props?.route?.params?.musicIndex) {
@@ -160,11 +160,7 @@ export default ClassMusic = (props) => {
     }
   };
 
-  const _onStopPressed = () => {
-    if (playbackInstance != null) {
-      playbackInstance.stopAsync();
-    }
-  };
+
 
   const _onForwardPressed = () => {
     if (playbackInstance) {
@@ -204,12 +200,6 @@ export default ClassMusic = (props) => {
 
   };
 
-  const _onVolumeSliderValueChange = value => {
-    if (playbackInstance != null) {
-      playbackInstance.setVolumeAsync(value);
-    }
-  };
-
 
   const _trySetRate = async rate => {
     if (playbackInstance != null) {
@@ -220,9 +210,6 @@ export default ClassMusic = (props) => {
     }
   };
 
-  const _onRateSliderSlidingComplete = async value => {
-    _trySetRate(value * RATE_SCALE);
-  };
 
   const _onSeekSliderValueChange = value => {
     if (playbackInstance != null && !isSeeking) {
@@ -309,17 +296,43 @@ export default ClassMusic = (props) => {
 
     }
   }
+  //comment function is related to stop mute-unmute and rate of speed change
+
+  // const _onRateSliderSlidingComplete = async value => {
+  //   _trySetRate(value * RATE_SCALE);
+  // };
+
+
+  // const _onVolumeSliderValueChange = value => {
+  //   if (playbackInstance != null) {
+  //     playbackInstance.setVolumeAsync(value);
+  //   }
+  // };
+  // const _onStopPressed = () => {
+  //   if (playbackInstance != null) {
+  //     playbackInstance.stopAsync();
+  //   }
+  // };
   return (
     <ScrollView bounces={false} >
       <View style={styles.contanier}>
         <View style={styles.mainbar}>
-          <AntDesign name="left" size={24} style={{ marginLeft: "5%" }} />
+          <AntDesign name="left" size={24} />
           <Text style={styles.now_playing_text}> Now Playing </Text>
-          <Entypo name="dots-three-horizontal" size={24} style={{ marginLeft: "20%" }} />
+          <Entypo name="dots-three-horizontal" size={24} />
         </View>
 
         <View style={styles.music_logo_view}>
-          <Image source={{ uri: audioBookPlaylist[index].imageSource }} style={styles.image_view} />
+          <ProgressCircle
+            percent={(_getTimestamp().runningPosition / _getTimestamp().totalDuration) * 100}
+            radius={100}
+            borderWidth={10}
+            color="#e75480"
+            shadowColor="#FFF"
+            bgColor="#fff">
+
+            <Image source={{ uri: audioBookPlaylist[index].imageSource }} style={styles.image_view} />
+          </ProgressCircle>
         </View>
 
         <View style={styles.name_of_song_View} >
@@ -332,6 +345,36 @@ export default ClassMusic = (props) => {
               LOADING_STRING
             )}
           </Text>
+        </View>
+
+
+        <View style={styles.functions_view}>
+          <TouchableOpacity style={{ opacity: 1 }} onPress={() =>
+            shuffleOnOff()
+          }>
+            {isShuffle ? <Entypo name="shuffle" size={24} color="#e75480" /> :
+              <Entypo name="shuffle" size={24} color="grey" />}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => _onBackPressed()} style={{}}>
+            <FontAwesome5Icon name="backward" size={24} color="#e75480" />
+          </TouchableOpacity>
+          <View style={{}}>
+
+            <TouchableOpacity style={{ height: 60, width: 60, backgroundColor: '#e75480', justifyContent: 'center', alignItems: 'center', borderRadius: 50, }} onPress={() => _onPlayPausePressed()} >
+              {isPlaying ? (
+                <FontAwesome5Icon name="pause" size={20} color="white" />
+              ) : (
+                <FontAwesome5Icon name="play" size={20} color="white" />
+              )}
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={() => _onForwardPressed()} style={{}}>
+            <FontAwesome5Icon name="forward" size={24} color="#e75480" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => repateOnOff()} style={{ opacity: 1 }}>
+            {isRepate ? <Feather name="repeat" size={20} color="#e75480" /> :
+              <Feather name="repeat" size={20} color="grey" />}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.slider_view}>
@@ -347,68 +390,27 @@ export default ClassMusic = (props) => {
           />
           <Text style={styles.slider_time}>{_getTimestamp().totalMusicTime || '00:00'}</Text>
         </View>
-        <View style={{ display: 'flex', justifyContent: 'space-around', flexDirection: 'row' }}>
-          <TouchableHighlight
-            style={styles.wrapper}
-            onPress={() => _onStopPressed()}
-            disabled={false}
-          >
-            <View>
-              <FontAwesome5Icon
-                name="stop-circle"
-                size={40}
-                color="#e75480"
-              />
-            </View>
-          </TouchableHighlight>
-          <TouchableOpacity onPress={(e) => { (isMute ? _onVolumeSliderValueChange(volume) : _onVolumeSliderValueChange(0)), setIsMute(!isMute) }}>
-            {isMute ?
-              <FontAwesome5Icon name='volume-mute' size={30} color='grey' /> :
-              <FontAwesome5Icon name='volume-up' size={30} color='#e75480' />
-            }
-          </TouchableOpacity>
-        </View>
-        <View style={styles.functions_view}>
-          <TouchableOpacity style={{ marginLeft: "9%", opacity: 1 }} onPress={() =>
-            shuffleOnOff()
-          }>
-            {isShuffle ? <Entypo name="shuffle" size={24} color="#e75480" /> :
-              <Entypo name="shuffle" size={24} color="grey" />}
-
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => _onBackPressed()} style={{ marginLeft: "12%" }}>
-            <FontAwesome5Icon name="backward" size={24} color="#e75480" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => _onPlayPausePressed()} style={{ marginLeft: "12%" }}>
-            {isPlaying ? (
-              <FontAwesome5Icon name="pause" size={30} color="#e75480" />
-            ) : (
-              <FontAwesome5Icon name="play" size={30} color="#e75480" />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => _onForwardPressed()} style={{ marginLeft: "12%" }}>
-            <FontAwesome5Icon name="forward" size={24} color="#e75480" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => repateOnOff()} style={{ marginLeft: "10%", opacity: 1 }}>
-            {isRepate ? <Feather name="repeat" size={20} color="#e75480" /> :
-              <Feather name="repeat" size={20} color="grey" />}
-          </TouchableOpacity>
-        </View>
+        {/*
+        // it include volume change mute-unmute and rate of speed of playing UI
         <View style={styles.slider_view_volume}>
           <FontAwesome5Icon name='volume-off' size={35} style={styles.slider_time} />
           <Slider
             style={styles.slider_style}
             minimumValue={0}
             maximumValue={1}
-
             onValueChange={(e) => { _onVolumeSliderValueChange(e), setVolume(e.toFixed(2)) }}
             minimumTrackTintColor="#e75480"
             maximumTrackTintColor="#d3d3d3"
             thumbTintColor="#e75480"
-
             value={volume}
           />
           <FontAwesome5Icon name='volume-up' size={25} style={styles.slider_time} />
+          <View style={{ width: '25%', alignItems: 'center' }} >
+            {isMute ?
+              <FontAwesome5Icon onPress={(e) => { (isMute ? _onVolumeSliderValueChange(volume) : _onVolumeSliderValueChange(0)), setIsMute(!isMute) }} name='volume-mute' size={30} color='grey' /> :
+              <FontAwesome5Icon onPress={(e) => { (isMute ? _onVolumeSliderValueChange(volume) : _onVolumeSliderValueChange(0)), setIsMute(!isMute) }} name='volume-up' size={30} color='#e75480' />
+            }
+          </View>
         </View>
         <View style={styles.slider_view_volume}>
           <FontAwesome5Icon name='fast-backward' size={25} style={styles.slider_time} />
@@ -420,29 +422,21 @@ export default ClassMusic = (props) => {
             minimumTrackTintColor="#4CCFF9"
           />
           <FontAwesome5Icon name='fast-forward' size={25} style={styles.slider_time} />
-        </View>
+          <View
+            style={{ width: '25%', alignItems: 'center' }}
 
-        <View style={styles.recently_played_view}>
-          <Text style={styles.recently_played_text}> Recently Played </Text>
-          <View style={styles.recently_played_list}>
-            <Image source={require("./../../assets/logo.jpg")} style={styles.recently_played_image} />
-            <View style={styles.recently_played_list_text}>
-              <Text style={styles.recently_played_list_text1}> #01 - Start With SEO </Text>
-              <Text style={styles.recently_played_list_text2}> By Setup Cast - 15: 35 </Text>
-            </View>
+            disabled={false}
+          >
             <View>
-              <ProgressCircle
-                percent={(_getTimestamp().runningPosition / _getTimestamp().totalDuration) * 100}
-                radius={25}
-                borderWidth={5}
+              <FontAwesome5Icon
+                name="stop-circle"
+                onPress={() => _onStopPressed()}
+                size={35}
                 color="#e75480"
-                shadowColor="#FFF"
-                bgColor="#fff">
-                <AntDesign name="play" size={25} color="#e75480" style={{ marginTop: "4%" }} />
-              </ProgressCircle>
+              />
             </View>
           </View>
-        </View>
+        </View> */}
       </View>
     </ScrollView>
   );
@@ -452,34 +446,42 @@ const styles = StyleSheet.create({
 
   contanier: {
     // height: DEVICE_HEIGHT,
-    width: DEVICE_WIDTH
+    width: DEVICE_WIDTH,
+    flex: 1,
+    paddingTop: 50
   },
   mainbar: {
+    display: 'flex',
+    justifyContent: 'space-between',
     height: "10%",
     width: "100%",
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
   },
   now_playing_text: {
     fontSize: 19,
-    marginLeft: "24%"
+
   },
   music_logo_view: {
-    height: "30%",
+    height: "70%",
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 10,
+
   },
   image_view: {
     height: "100%",
-    width: "50%",
+    width: "100%",
     borderRadius: 10
   },
   name_of_song_View: {
     height: "15%",
     width: "100%",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    marginBottom: 10
   },
   name_of_song_Text1: {
     fontSize: 19,
@@ -493,13 +495,16 @@ const styles = StyleSheet.create({
     height: "10%",
     width: "100%",
     alignItems: "center",
-    flexDirection: "row"
+    flexDirection: "row",
+    marginVertical: 25
+
   },
   slider_view_volume: {
     height: "10%",
-    width: "100%",
+    width: "75%",
     alignItems: "center",
-    flexDirection: "row"
+    flexDirection: "row",
+    marginVertical: 4
   },
   slider_style: {
     height: "70%",
@@ -511,49 +516,12 @@ const styles = StyleSheet.create({
     color: "#808080"
   },
   functions_view: {
+    display: 'flex',
+    justifyContent: 'space-evenly',
     flexDirection: "row",
     height: "10%",
     width: "100%",
-    alignItems: "center"
-  },
-  recently_played_view: {
-    height: "25%",
-    width: "100%",
-  },
-  recently_played_text: {
-    fontWeight: "bold",
-    fontSize: 16,
-    color: "#808080",
-    marginLeft: "5%",
-    marginTop: "6%"
-  },
-  recently_played_list: {
-    backgroundColor: "#FFE3E3",
-    height: "50%",
-    width: "90%",
-    borderRadius: 10,
-    marginLeft: "5%",
-    marginTop: "5%",
     alignItems: "center",
-    flexDirection: "row"
+    marginVertical: 10
   },
-  recently_played_image: {
-    height: "80%",
-    width: "20%",
-    borderRadius: 10
-  },
-  recently_played_list_text: {
-    height: "100%",
-    width: "60%",
-    justifyContent: "center"
-  },
-  recently_played_list_text1: {
-    fontSize: 15,
-    marginLeft: "8%"
-  },
-  recently_played_list_text2: {
-    fontSize: 16,
-    color: "#808080",
-    marginLeft: "8%"
-  }
 });

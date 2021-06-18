@@ -20,7 +20,14 @@ const Tab = createBottomTabNavigator();
 
 class MyIcon extends Component {
   render() {
-    return <FontAwesome5 name={this.props.name} color={"#adad85"} size={30} />;
+    return (
+      <FontAwesome5
+        name={this.props.name}
+        type={this.props.iconType}
+        color={this.props.color}
+        size={30}
+      />
+    );
   }
 }
 const AnimatedIcon = Animated.createAnimatedComponent(MyIcon);
@@ -119,20 +126,16 @@ function MyTabs({ descriptors, state, route, navigation, index }) {
         //   target: route.key,
         //   canPreventDefault: true,
         // });
-
-        //not to render same page
-        /*if (!isFocused) {
+        if (!isFocused) {
           navigation.navigate(route.name);
-        }*/
-        navigation.navigate(route.name);
+        }
       });
     });
   }
 
   let marginal = marginValue.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0],
-    //outputRange: [0, -20]
+    outputRange: [0, -20],
   });
 
   let opacity = opacityValue.interpolate({
@@ -142,12 +145,12 @@ function MyTabs({ descriptors, state, route, navigation, index }) {
 
   let bgColor = bgColorValue.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#f7f7f7", "#ffd24d"],
+    outputRange: ["#f7f7f7", "#e75480"],
   });
 
   let iconColor = iconValue.interpolate({
     inputRange: [0, 1],
-    outputRange: ["#2E7F9F", "#f7f7f7"],
+    outputRange: ["#e75480", "#f7f7f7"],
   });
 
   const onPress = () => {
@@ -166,7 +169,12 @@ function MyTabs({ descriptors, state, route, navigation, index }) {
     // },2000)
   };
 
-
+  // const onLongPress = () => {
+  //   navigation.emit({
+  //     type: 'tabLongPress',
+  //     target: route.key,
+  //   });
+  // };
 
   return (
     <TouchableOpacity
@@ -190,19 +198,26 @@ function MyTabs({ descriptors, state, route, navigation, index }) {
           padding: 5,
           paddingBottom: 0,
           borderRadius: 50,
-          backgroundColor: bgColor,
-          height: 50,
         }}
       >
         <Animated.View
           style={{
+            backgroundColor: bgColor,
             padding: 5,
             paddingBottom: 0,
-            borderRadius: 30,
+            borderRadius: 50,
           }}
         >
-          <AnimatedIcon name={options.icon} color={iconColor} size={30} />
+          <AnimatedIcon
+            name={options.icon}
+            iconType={options.iconType || null}
+            color={iconColor}
+            size={30}
+          />
         </Animated.View>
+        <Animated.Text style={{ color: "#2E7F9F", opacity: opacity }}>
+          {label}
+        </Animated.Text>
       </Animated.View>
     </TouchableOpacity>
   );
@@ -213,23 +228,14 @@ function MyTabBar({ state, descriptors, navigation }) {
   if (focusedOptions.tabBarVisible === false) {
     return null;
   }
-  // // making homepage at first
-  // let editedList = state.routes;
-  // let firstItem = state.routes.findIndex((i) => i.name === "Home");
-  // let homeItem = state.routes[firstItem];
-  // let HistoryItem = state.routes.findIndex((i) => i.name === "Chat");
-  // if (firstItem === 0) {
-  //   editedList[firstItem] = editedList[HistoryItem];
-  //   editedList[HistoryItem] = homeItem;
-  // }
 
   return (
     <View
       style={{
         flexDirection: "row",
+        paddingTop: 5,
         paddingHorizontal: 20,
         backgroundColor: "#f7f7f7",
-        height: 50
       }}
     >
       {state.routes.map((route, index) => {
@@ -253,40 +259,42 @@ const TabNavigator = (props) => {
     <Tab.Navigator tabBar={(props) => <MyTabBar {...props} />}>
       <Tab.Screen
         name="MusicList"
-        View
         component={MusicListStack}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
-            icon: "list",
-          };
-        }}
-      />
-      <Tab.Screen
-        name="MusicPlayPage"
-        component={NewComponent}
-        options={({ route }) => {
-          const routeName = getFocusedRouteNameFromRoute(route);
-          return {
             // tabBarVisible: !(routeName === "LogIn" || routeName === "Register"),
-            icon: "headphones-alt",
+            icon: "list",
           };
         }}
       />
       <Tab.Screen
-        name="Blogs"
-        component={NewComponent}
+        name="Player"
+        component={MusicPlayerStack}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
-            icon: "list",
+            icon: "headphones",
+            iconType: "font-awesome",
           };
         }}
       />
 
+      <Tab.Screen
+        name="Player2"
+        component={MusicPlayerStack}
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route);
+          return {
+            icon: "medkit",
+            iconType: "font-awesome",
+          };
+        }}
+      />
 
     </Tab.Navigator>
   );
 };
 
 export default TabNavigator;
+
