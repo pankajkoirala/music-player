@@ -13,6 +13,12 @@ import { audioBookPlaylist } from './musicListArray'
 
 
 export default MusicList = (props) => {
+  const {
+    setShouldPlay,
+    setIndex,
+    setPlay,
+    play
+  } = props.musicPlayerFunction
   return (
     <View style={{ flex: 1, paddingTop: 50 }}>
       <View>
@@ -23,7 +29,12 @@ export default MusicList = (props) => {
       <ScrollView bounces={false}>
         {audioBookPlaylist.map((arg, i) => {
           return (
-            <TouchableOpacity onPress={() => props.navigation.navigate('MusicPlayPage', { musicIndex: i })
+            <TouchableOpacity onPress={() => {
+              props.navigation.navigate('MusicPlayPage',)
+                , setShouldPlay(true),
+                setIndex(i)
+              setPlay(!play)
+            }
             } key={i} style={styles.musicBox}>
               <Text>{arg.title}</Text>
             </TouchableOpacity>

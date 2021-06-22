@@ -28,32 +28,21 @@ export function PageHeader(props) {
 }
 
 const MusicPlayerScreen = {
-  MusicPlayPage: MusicPlayPage,
-  MusicList: MusicList
-
-};
-
-
-export function MusicPlayerStack(props) {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {Object.entries(MusicPlayerScreen).map(([name, component]) => (
-        <Stack.Screen name={name} component={component} key={name} />
-      ))}
-    </Stack.Navigator>
-  );
-}
-const MusicListScreen = {
   MusicList: MusicList,
-  MusicList: MusicList
-
+  MusicPlayPage: MusicPlayPage,
 };
-export function MusicListStack(props) {
+
+
+export default function MusicPlayerStack({ musicPlayerFunction }) {
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {Object.entries(MusicListScreen).map(([name, component]) => (
-        <Stack.Screen name={name} component={component} key={name} />
+      {Object.entries(MusicPlayerScreen).map(([name, Component]) => (
+        <Stack.Screen name={name}
+          children={(props) => <Component {...props} musicPlayerFunction={musicPlayerFunction} />} key={name}
+        />
       ))}
     </Stack.Navigator>
   );
 }
+

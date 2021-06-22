@@ -1,9 +1,11 @@
 import React, { Component, useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
-import { MusicListStack, MusicPlayerStack } from "./stack";
+import MusicPlayerStack from "./stack";
 import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
-import NewComponent from './../component/newPlaylistFunction'
+import PlayerMusicListScreen from './../component/musicList'
+import PlayerScreen from './../component/newPlaylistFunction'
+
 import Stack from "./stack";
 import {
   Text,
@@ -254,12 +256,14 @@ function MyTabBar({ state, descriptors, navigation }) {
   );
 }
 
-const TabNavigator = (props) => {
+const TabNavigator = ({ musicPlayerFunction }) => {
   return (
-    <Tab.Navigator tabBar={(props) => <MyTabBar {...props} />}>
+    <Tab.Navigator
+      tabBar={(props) => <MyTabBar {...props} />}
+    >
       <Tab.Screen
         name="MusicList"
-        component={MusicListStack}
+        children={(props) => <MusicPlayerStack {...props} musicPlayerFunction={musicPlayerFunction} />}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
@@ -270,7 +274,8 @@ const TabNavigator = (props) => {
       />
       <Tab.Screen
         name="Player"
-        component={MusicPlayerStack}
+        children={(props) => <PlayerScreen {...props} musicPlayerFunction={musicPlayerFunction} />}
+
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
@@ -282,7 +287,8 @@ const TabNavigator = (props) => {
 
       <Tab.Screen
         name="Player2"
-        component={MusicPlayerStack}
+        children={(props) => <PlayerScreen {...props} musicPlayerFunction={musicPlayerFunction} />}
+
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
