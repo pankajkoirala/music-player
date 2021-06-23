@@ -1,29 +1,27 @@
+
+import MusicPlayerStack from "./stack";
+import PlayerScreen from './../component/newPlaylistFunction'
+import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
+
 import React, { Component, useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
-import MusicPlayerStack from "./stack";
-import FontAwesome5 from "react-native-vector-icons/FontAwesome5";
-import PlayerMusicListScreen from './../component/musicList'
-import PlayerScreen from './../component/newPlaylistFunction'
-
-import Stack from "./stack";
 import {
   Text,
-  ImageBackground,
   View,
-  Image,
   Animated,
-  Easing,
 } from "react-native";
 
+import { Icon } from "react-native-elements";
 import { TouchableOpacity } from "react-native";
+
 
 const Tab = createBottomTabNavigator();
 
 class MyIcon extends Component {
   render() {
     return (
-      <FontAwesome5
+      <Icon
         name={this.props.name}
         type={this.props.iconType}
         color={this.props.color}
@@ -44,139 +42,14 @@ function MyTabs({ descriptors, state, route, navigation, index }) {
         : route.name;
 
   const isFocused = state.index === index;
-  let opacityValue = new Animated.Value(0);
-  let marginValue = new Animated.Value(0);
-  let bgColorValue = new Animated.Value(0);
-  let iconValue = new Animated.Value(0);
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.spring(bgColorValue, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: false,
-      }),
-      Animated.spring(iconValue, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: false,
-      }),
-      Animated.spring(marginValue, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: false,
-      }),
-      Animated.spring(opacityValue, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, [state]);
-
-  function animateOpacity() {
-    // marginValue.setValue( -20);
-    Animated.parallel(
-      [
-        Animated.timing(bgColorValue, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-        Animated.timing(iconValue, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-        Animated.timing(marginValue, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-        Animated.timing(opacityValue, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-      ],
-      { stopTogether: true }
-    ).start(() => {
-      Animated.parallel([
-        Animated.spring(bgColorValue, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-        Animated.spring(iconValue, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-        Animated.spring(marginValue, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-        Animated.spring(opacityValue, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: false,
-        }),
-      ]).start(() => {
-        // const event = navigation.emit({
-        //   type: 'tabPress',
-        //   target: route.key,
-        //   canPreventDefault: true,
-        // });
-        if (!isFocused) {
-          navigation.navigate(route.name);
-        }
-      });
-    });
-  }
-
-  let marginal = marginValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -20],
-  });
-
-  let opacity = opacityValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
-  let bgColor = bgColorValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["#f7f7f7", "#e75480"],
-  });
-
-  let iconColor = iconValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["#e75480", "#f7f7f7"],
-  });
 
   const onPress = () => {
-    animateOpacity();
-
-    // const event = navigation.emit({
-    //   type: "tabPress",
-    //   target: route.key,
-    //   canPreventDefault: true,
-    // });
-
-    // setTimeout(()=> {
-    //   if (!isFocused && !event.defaultPrevented) {
-    //     navigation.navigate(route.name);
-    //   }
-    // },2000)
+    if (!isFocused) {
+      navigation.navigate(route.name);
+    }
   };
 
-  // const onLongPress = () => {
-  //   navigation.emit({
-  //     type: 'tabLongPress',
-  //     target: route.key,
-  //   });
-  // };
+
 
   return (
     <TouchableOpacity
@@ -189,12 +62,12 @@ function MyTabs({ descriptors, state, route, navigation, index }) {
       // onLongPress={onLongPress}
       style={{ flex: 1, alignItems: "center" }}
     >
-      <Animated.View
+      <View
         style={{
           transform: [
-            {
-              translateY: marginal,
-            },
+            // {
+            //   translateY: marginal,
+            // },
           ],
           backgroundColor: "#f7f7f7",
           padding: 5,
@@ -202,25 +75,30 @@ function MyTabs({ descriptors, state, route, navigation, index }) {
           borderRadius: 50,
         }}
       >
-        <Animated.View
+        <View
           style={{
-            backgroundColor: bgColor,
+            // backgroundColor: bgColor,
+            alignItems: 'center',
+            justifyContent: 'center',
             padding: 5,
             paddingBottom: 0,
             borderRadius: 50,
+            height: 50,
+            width: 50,
+            backgroundColor: isFocused ? 'pink' : 'transparent',
           }}
         >
-          <AnimatedIcon
+          <FontAwesome5
             name={options.icon}
             iconType={options.iconType || null}
-            color={iconColor}
+            color={'#e75480'}
             size={30}
           />
-        </Animated.View>
-        <Animated.Text style={{ color: "#2E7F9F", opacity: opacity }}>
+        </View>
+        <Text style={{ color: "#2E7F9F", }}>
           {label}
-        </Animated.Text>
-      </Animated.View>
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -258,37 +136,34 @@ function MyTabBar({ state, descriptors, navigation }) {
 
 const TabNavigator = ({ musicPlayerFunction }) => {
   return (
-    <Tab.Navigator
-      tabBar={(props) => <MyTabBar {...props} />}
-    >
+    <Tab.Navigator tabBar={(props) => <MyTabBar {...props} />}>
       <Tab.Screen
-        name="MusicList"
+        name="Home"
+
         children={(props) => <MusicPlayerStack {...props} musicPlayerFunction={musicPlayerFunction} />}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
             // tabBarVisible: !(routeName === "LogIn" || routeName === "Register"),
-            icon: "list",
+            icon: "home",
           };
         }}
       />
       <Tab.Screen
-        name="Player"
+        name="Doctors"
         children={(props) => <PlayerScreen {...props} musicPlayerFunction={musicPlayerFunction} />}
-
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
-            icon: "headphones",
+            icon: "stethoscope",
             iconType: "font-awesome",
           };
         }}
       />
 
       <Tab.Screen
-        name="Player2"
+        name="Medicines"
         children={(props) => <PlayerScreen {...props} musicPlayerFunction={musicPlayerFunction} />}
-
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {

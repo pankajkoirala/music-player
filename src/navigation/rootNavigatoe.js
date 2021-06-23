@@ -1,6 +1,19 @@
 import React, { Component, useEffect, useState } from 'react';
 import { NavigationContainer } from "@react-navigation/native";
 import ButtomNavigation from "./buttomNav";
+// import * as Permissions from 'expo-permissions';
+import * as MediaLibrary from 'expo-media-library';
+import Permissions from 'react-native-permissions';
+
+
+const albums = () => {
+  const w = MediaLibrary.getAlbumsAsync().then((res) => console.log(res)).catch((err) => console.log(err))
+  return w
+};
+Permissions.request('storage').then((res) => console.log(res)).catch((err) => console.log(err))
+// const listOfTitles = albums().map(album => album.title);
+console.log(albums());
+
 import {
   Dimensions,
 } from 'react-native';
@@ -53,7 +66,7 @@ export default function AppStack(props) {
     }
     apple()
 
-  }, [play, playAgain, isRepate, isShuffle,])
+  }, [index, play, playAgain, isRepate, isShuffle,])
 
 
   const _loadNewPlaybackInstance = async (playing) => {
@@ -145,7 +158,7 @@ export default function AppStack(props) {
 
   const _onForwardPressed = () => {
     if (playbackInstance) {
-      playbackInstance.unloadAsync()
+      // playbackInstance.unloadAsync()
       if (isShuffle) {
         setIndex((Math.floor(Math.random() * (audioBookPlaylist.length - 0 + 1)))) %
           audioBookPlaylist.length;
@@ -165,7 +178,7 @@ export default function AppStack(props) {
   const _onBackPressed = () => {
 
     if (playbackInstance) {
-      playbackInstance.unloadAsync()
+      // playbackInstance.unloadAsync()
       if (isShuffle) {
         setIndex((Math.floor(Math.random() * (audioBookPlaylist.length - 0 + 1)))) %
           audioBookPlaylist.length;
