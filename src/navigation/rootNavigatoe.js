@@ -14,6 +14,7 @@ Permissions.request('storage').then((res) => console.log(res)).catch((err) => co
 // const listOfTitles = albums().map(album => album.title);
 console.log(albums());
 
+
 import {
   Dimensions,
 } from 'react-native';
