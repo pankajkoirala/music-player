@@ -2,6 +2,8 @@ import React, { Component, useEffect, useState } from 'react';
 import { AntDesign, Entypo, Feather } from "react-native-vector-icons"
 import FontAwesome5Icon from "react-native-vector-icons/FontAwesome5";
 import ProgressCircle from 'react-native-progress-circle'
+import TimerPicker from "./../common/timerSelector";
+
 import {
   Dimensions,
   Image,
@@ -26,6 +28,7 @@ const BUFFERING_STRING = 'Buffering...';
 const RATE_SCALE = 3.0;
 
 export default ClassMusic = (props) => {
+  const [isTimerOpen, setIsTimerOpen] = useState(false);
 
   const {
     _onPlayPausePressed,
@@ -45,7 +48,9 @@ export default ClassMusic = (props) => {
     index,
     RATE_SCALE,
     isRepate,
-    isShuffle } = props.musicPlayerFunction
+    isShuffle,
+    timer,
+    setTimer } = props.musicPlayerFunction
 
   // const [index, setIndex] = useState(0)
   // const [isSeeking, setIsSeeking] = useState(false)
@@ -336,6 +341,25 @@ export default ClassMusic = (props) => {
   return (
     <ScrollView bounces={false} >
       <View style={styles.contanier}>
+        <TouchableOpacity
+          onPress={() => setIsTimerOpen(true)}
+          style={
+            Platform.OS === "ios" ? styles.genderPickerIOS : styles.genderPicker
+          }
+        >
+          {Platform.OS === "ios" && (
+            <View>
+              <Text>{timer / 60000} Min</Text>
+            </View>
+          )}
+          <TimerPicker
+            setTimerOpen={setIsTimerOpen}
+            timerOpen={isTimerOpen}
+            onChange={setTimer}
+            // oldValue={timer}
+            editable={false}
+          />
+        </TouchableOpacity>
         <View style={styles.mainbar}>
           <AntDesign name="left" size={24} />
           <Text style={styles.now_playing_text}> Now Playing </Text>
@@ -351,13 +375,13 @@ export default ClassMusic = (props) => {
             shadowColor="#FFF"
             bgColor="#fff">
 
-            <Image source={{ uri: audioBookPlaylist[index].imageSource }} style={styles.image_view} />
+            {/* <Image source={{ uri: audioBookPlaylist[index].imageSource }} style={styles.image_view} /> */}
           </ProgressCircle>
         </View>
 
         <View style={styles.name_of_song_View} >
-          <Text style={styles.name_of_song_Text1}>{audioBookPlaylist[index].title}</Text>
-          <Text style={styles.name_of_song_Text2}>{audioBookPlaylist[index].author} - {audioBookPlaylist[index].source}</Text>
+          <Text style={styles.name_of_song_Text1}>{audioBookPlaylist[index] && audioBookPlaylist[index].title}</Text>
+          <Text style={styles.name_of_song_Text2}>{audioBookPlaylist[index] && audioBookPlaylist[index].author} - {audioBookPlaylist[index] && audioBookPlaylist[index].source}</Text>
           <Text style={[styles.text,]}>
             {isBuffering ? (
               BUFFERING_STRING

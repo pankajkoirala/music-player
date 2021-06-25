@@ -17,7 +17,8 @@ export default MusicList = (props) => {
     setShouldPlay,
     setIndex,
     setPlay,
-    play
+    play,
+    songsList
   } = props.musicPlayerFunction
   return (
     <View style={{ flex: 1, paddingTop: 50 }}>
@@ -37,6 +38,19 @@ export default MusicList = (props) => {
             }
             } key={i} style={styles.musicBox}>
               <Text>{arg.title}</Text>
+            </TouchableOpacity>
+          )
+        })}
+        {songsList.map((arg, i) => {
+          return (
+            <TouchableOpacity onPress={() => {
+              props.navigation.navigate('MusicPlayPage',)
+                , setShouldPlay(true),
+                setIndex(i)
+              setPlay(!play)
+            }
+            } key={i} style={styles.musicBox}>
+              <Text>{arg.filename}</Text>
             </TouchableOpacity>
           )
         })}

@@ -1,22 +1,14 @@
 import React, { Component, useEffect, useState } from 'react';
 import { NavigationContainer } from "@react-navigation/native";
 import ButtomNavigation from "./buttomNav";
-// import * as Permissions from 'expo-permissions';
+import * as Permissions from 'expo-permissions';
 import * as MediaLibrary from 'expo-media-library';
-import Permissions from 'react-native-permissions';
 
 
-const albums = () => {
-  const w = MediaLibrary.getAlbumsAsync().then((res) => console.log(res)).catch((err) => console.log(err))
-  return w
-};
-Permissions.request('storage').then((res) => console.log(res)).catch((err) => console.log(err))
-// const listOfTitles = albums().map(album => album.title);
-console.log(albums());
 
 
 import {
-  Dimensions,
+  Dimensions, Alert
 } from 'react-native';
 import { Audio } from 'expo-av';
 import { audioBookPlaylist } from './../component/musicListArray'
@@ -42,6 +34,72 @@ export default function AppStack(props) {
   const [isRepate, setIsRepete] = useState(false)
   const [playAgain, setPlayAgain] = useState(false)
   const [play, setPlay] = useState(false)
+  const [songsList, setSongsList] = useState([])
+  const [timer, setTimer] = useState(0);
+
+
+  //..............................................................................................................
+  // const [permission, askForPermission] = usePermissions(Permissions.CAMERA, { ask: true });
+
+  // if (!permission || permission.status !== 'granted') {
+  //   return (
+  //     <View>
+  //       <Text>Permission is not granted</Text>
+  //       <Button title="Grant permission" onPress={askForPermission} />
+  //     </View>
+  //   );
+  // }
+
+
+  const AskPermission = () => {
+    Alert.alert('Permission Required', 'this app needs to read audio file', [{
+      text: 'im ready',
+      onPress: () => getPermission()
+    }, {
+      text: 'cancle',
+      onPress: () => AskPermission()
+
+    }])
+  }
+
+  const getPermission = async () => {
+    const permission = await MediaLibrary.getPermissionsAsync()
+    if (permission.granted
+    ) {
+      const mediaList = await MediaLibrary.getAssetsAsync({ mediaType: 'audio' })
+      setSongsList(mediaList?.assets)
+
+    } else if (!permission.granted && permission.canAskAgain) {
+      const { status, canAskAgain } = await MediaLibrary.requestPermissionsAsync()
+      if (status === 'denied' && canAskAgain) {
+        //display and alert
+        AskPermission()
+      }
+      if (status === 'granted') {
+        const mediaList = await MediaLibrary.getAssetsAsync({ mediaType: 'audio' })
+        setSongsList(mediaList?.assets)
+        // console.log("🚀 ~ file: rootNavigatoe.js ~ line 57 ~ getPermission ~ mediaList", mediaList)
+      }
+      if (status === 'denied' && !canAskAgain) {
+        //display some error to the users
+
+      }
+    }
+  }
+
+  useEffect(() => {
+    getPermission()
+  }, [])
+
+  //..............................................................................................................
+  useEffect(() => {
+    if (isPlaying) {
+      setTimeout(() => {
+        setShouldPlay(false)
+        setPlay(!play)
+      }, 30000);
+    }
+  }, [timer, playbackInstance])
 
 
 
@@ -67,7 +125,7 @@ export default function AppStack(props) {
     }
     apple()
 
-  }, [index, play, playAgain, isRepate, isShuffle,])
+  }, [index, play, playAgain, isRepate, isShuffle, songsList])
 
 
   const _loadNewPlaybackInstance = async (playing) => {
@@ -79,6 +137,7 @@ export default function AppStack(props) {
     }
 
     const source = audioBookPlaylist[index].uri
+    // const source = songsList[index]
 
     const initialStatus = {
       shouldPlay: playing,
@@ -324,6 +383,8 @@ export default function AppStack(props) {
         setShouldPlay: setShouldPlay,
         setIndex: setIndex,
         setPlay: setPlay,
+        timer: timer,
+        setTimer: setTimer,
         play: play,
         isBuffering: isBuffering,
         isPlaying: isPlaying,
@@ -333,7 +394,7 @@ export default function AppStack(props) {
         index: index,
         isRepate: isRepate,
         isShuffle: isShuffle,
-
+        songsList: songsList
       }} />
     </NavigationContainer>
   );
