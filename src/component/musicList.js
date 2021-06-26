@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, useContext } from 'react';
 import {
   Dimensions,
   Image,
@@ -9,17 +9,21 @@ import {
   TouchableOpacity,
   ScrollView
 } from 'react-native';
+import { AudioContext } from '../context/audioProvider';
 import { audioBookPlaylist } from './musicListArray'
 
 
 export default MusicList = (props) => {
+
+  const context = useContext(AudioContext);
   const {
     setShouldPlay,
     setIndex,
     setPlay,
     play,
     songsList
-  } = props.musicPlayerFunction
+  } = context
+
   return (
     <View style={{ flex: 1, paddingTop: 50 }}>
       <View>

@@ -134,13 +134,13 @@ function MyTabBar({ state, descriptors, navigation }) {
   );
 }
 
-const TabNavigator = ({ musicPlayerFunction }) => {
+const TabNavigator = () => {
   return (
     <Tab.Navigator tabBar={(props) => <MyTabBar {...props} />}>
       <Tab.Screen
         name="Home"
 
-        children={(props) => <MusicPlayerStack {...props} musicPlayerFunction={musicPlayerFunction} />}
+        children={(props) => <MusicPlayerStack {...props} />}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
@@ -151,7 +151,7 @@ const TabNavigator = ({ musicPlayerFunction }) => {
       />
       <Tab.Screen
         name="Doctors"
-        children={(props) => <PlayerScreen {...props} musicPlayerFunction={musicPlayerFunction} />}
+        children={(props) => <PlayerScreen {...props} />}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
@@ -163,7 +163,7 @@ const TabNavigator = ({ musicPlayerFunction }) => {
 
       <Tab.Screen
         name="Medicines"
-        children={(props) => <PlayerScreen {...props} musicPlayerFunction={musicPlayerFunction} />}
+        children={(props) => <PlayerScreen {...props} />}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route);
           return {
